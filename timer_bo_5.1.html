@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Timer Bloc Opératoire</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      display: flex;
+      flex-direction: row;
+      background-color: #ddd;
+      border-radius: 20px;
+      width: 700px;
+      height: 370px;
+      position: relative;
+      overflow: hidden;
+    }
+    .left-panel {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 25px;
+    }
+    .value-header {
+      display: flex;
+      justify-content: space-between;
+      width: 120px;
+      margin-left: 60px;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    .value-header span {
+      display: inline-block;
+      width: 30px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      transform: translate(6px, 6px);
+    }
+    .control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .label {
+      font-weight: bold;
+      width: 60px;
+    }
+    .slider-container {
+      width: 120px;
+      position: relative;
+      background: #ccc;
+      border-radius: 20px;
+      height: 30px;
+    }
+    .slider-container.short {
+      width: 80px;
+    }
+    .slider {
+      width: 100%;
+      appearance: none;
+      background: transparent;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 30px;
+      z-index: 2;
+    }
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      height: 36px;
+      width: 36px;
+      border-radius: 50%;
+      background: #4CAF50;
+      cursor: pointer;
+      border: 3px solid white;
+      margin-top: -3px;
+    }
+    .slider::-moz-range-thumb {
+      height: 36px;
+      width: 36px;
+      border-radius: 50%;
+      background: #4CAF50;
+      cursor: pointer;
+      border: 3px solid white;
+    }
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #timerText {
+      font-size: 4em;
+      font-weight: bold;
+      color: black;
+      margin-top: 20px;
+    }
+    .icon-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .icon-btn {
+      width: 50px;
+      height: 50px;
+      background: #bbb;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .icon-btn.active {
+      background: #4CAF50;
+    }
+    .icon-btn img {
+      width: 28px;
+      height: 28px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="left-panel">
+    <div class="value-header"><span>0</span><span>1</span><span>2</span></div>
+    <div class="control"><div class="label">IBO</div><div class="slider-container"><input type="range" min="0" max="2" value="0" class="slider" id="iboRange"></div></div>
+    <div class="control"><div class="label">CHIR</div><div class="slider-container"><input type="range" min="0" max="2" value="0" class="slider" id="chirRange"></div></div>
+    <div class="control"><div class="label">IADE</div><div class="slider-container short"><input type="range" min="0" max="1" value="0" class="slider" id="iadeRange"></div></div>
+    <div class="control"><div class="label">Patient</div><div class="slider-container short"><input type="range" min="0" max="1" value="0" class="slider" id="patRange"></div></div>
+  </div>
+  <div class="right-panel">
+    <!-- BOUTONS HOMME / FEMME -->
+    <div class="icon-row">
+      <div class="icon-btn gender-btn" id="btnHomme"><img src="https://cdn-icons-png.flaticon.com/512/3439/3439472.png" alt="homme" /></div>
+      <div class="icon-btn gender-btn" id="btnFemme"><img src="https://cdn-icons-png.flaticon.com/512/103/103277.png" alt="femme" /></div>
+    </div>
+    <!-- BOUTONS ORGANES -->
+    <div class="icon-row">
+      <div class="icon-btn org-btn"><img src="https://cdn-icons-png.flaticon.com/512/3458/3458771.png" alt="crâne" /></div>
+      <div class="icon-btn org-btn"><img src="https://cdn-icons-png.flaticon.com/512/6800/6800956.png" alt="thorax" /></div>
+      <div class="icon-btn org-btn"><img src="https://cdn-icons-png.flaticon.com/512/2001/2001818.png" alt="foie" /></div>
+      <div class="icon-btn org-btn"><img src="https://cdn-icons-png.flaticon.com/512/2928/2928078.png" alt="os" /></div>
+    </div>
+    <div id="timerText">--:--</div>
+  </div>
+</div>
+
+<script>
+let baseTime = 0;
+let currentTime = 0;
+let timerInterval = null;
+let previousOrgans = 0;
+const state = { ibo: 0, chir: 0, iade: 0, pat: 0 };
+
+document.querySelectorAll(".slider").forEach(slider => {
+  slider.addEventListener("input", () => {
+    const id = slider.id.replace("Range", "");
+    state[id] = parseInt(slider.value);
+    evaluate();
+  });
+});
+
+document.querySelectorAll(".org-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    btn.classList.toggle("active");
+    updateTimerFromOrgans();
+  });
+});
+
+document.querySelectorAll(".gender-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const wasActive = btn.classList.contains("active");
+    document.querySelectorAll(".gender-btn").forEach(b => b.classList.remove("active"));
+    if (!wasActive) btn.classList.add("active");
+    evaluate();
+  });
+});
+
+function updateTimerFromOrgans() {
+  const active = document.querySelectorAll(".org-btn.active").length;
+  const timer = document.getElementById("timerText");
+  if (active < previousOrgans) {
+    const removed = previousOrgans - active;
+    currentTime -= removed * 4 * 60;
+    if (currentTime <= 0) {
+      const timer = document.getElementById("timerText");
+      if (active === 0) {
+        currentTime = 0;
+        timer.textContent = "--:--";
+        timer.style.color = "black";
+      } else {
+        currentTime = 0;
+        timer.textContent = "BLOC TERMINÉ";
+        timer.style.color = "brown";
+        document.querySelectorAll(".org-btn").forEach(b => b.style.pointerEvents = "none");
+      }
+      stopTimer();
+      previousOrgans = active;
+      return;
+    }
+  } else {
+    const added = active - previousOrgans;
+    currentTime += added * 4 * 60;
+  }
+  previousOrgans = active;
+  timer.textContent = formatTime(currentTime);
+  evaluate();
+}
+
+function formatTime(t) {
+  const m = Math.floor(t / 60).toString().padStart(2, '0');
+  const s = Math.floor(t % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function evaluate() {
+  const timer = document.getElementById("timerText");
+  const genderOK = document.querySelector(".gender-btn.active");
+  const organOK = document.querySelectorAll(".org-btn.active").length > 0;
+  const ready = state.ibo > 0 && state.chir > 0 && state.iade > 0 && state.pat > 0;
+
+  if (!genderOK || !organOK) {
+    stopTimer();
+    if (currentTime === 0) {
+      timer.textContent = "--:--";
+      timer.style.color = "black";
+    } else if (currentTime > 0) {
+      stopTimer();
+      timer.style.color = "blue";
+    }
+    return;
+  }
+
+  if (!ready || currentTime === 0) {
+    stopTimer();
+    if (currentTime > 0) {
+      timer.style.color = "blue";
+    }
+    return;
+  }
+
+  startTimer((state.ibo === 2 ? 1.5 : 1) * (state.chir === 2 ? 1.5 : 1));
+}
+
+function startTimer(speed) {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    const genderOK = document.querySelector(".gender-btn.active");
+    const organOK = document.querySelectorAll(".org-btn.active").length > 0;
+    if (!genderOK || !organOK) {
+      stopTimer();
+      currentTime = 0;
+      const timer = document.getElementById("timerText");
+      timer.textContent = "--:--";
+      timer.style.color = "black";
+      return;
+    }
+    currentTime -= speed;
+    const timer = document.getElementById("timerText");
+    if (currentTime <= 0 || isNaN(currentTime)) {
+      currentTime = 0;
+      timer.textContent = "BLOC TERMINÉ";
+      timer.style.color = "brown";
+      stopTimer();
+    } else {
+      timer.textContent = formatTime(currentTime);
+      timer.style.color = "brown";
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+}
+</script>
+</body>
+</html>
