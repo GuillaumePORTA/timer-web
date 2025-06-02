@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Icônes alignées</title>
+  <title>Icônes aléatoires</title>
   <style>
     * {
       box-sizing: border-box;
@@ -39,11 +39,43 @@
   </style>
 </head>
 <body>
-  <div class="icon-row">
-    <img src="https://raw.githubusercontent.com/GuillaumePORTA/icons/main/crane.png" alt="Crâne">
-    <img src="https://raw.githubusercontent.com/GuillaumePORTA/icons/main/thorax.png" alt="Thorax">
-    <img src="https://raw.githubusercontent.com/GuillaumePORTA/icons/main/abdomen.png" alt="Abdomen">
-    <img src="https://raw.githubusercontent.com/GuillaumePORTA/icons/main/os.png" alt="Os">
-  </div>
+  <div class="icon-row" id="iconRow"></div>
+
+  <script>
+    const icons = [
+      { src: "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/crane.png", alt: "Crâne" },
+      { src: "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/thorax.png", alt: "Thorax" },
+      { src: "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/abdomen.png", alt: "Abdomen" },
+      { src: "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/os.png", alt: "Os" }
+    ];
+
+    function getRandomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function selectIconCount() {
+      const rand = Math.random();
+      if (rand < 0.3) return 1;
+      if (rand < 0.6) return 2;
+      if (rand < 0.9) return 3;
+      return 4;
+    }
+
+    function pickRandomIcons(count) {
+      const shuffled = [...icons].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
+    }
+
+    const iconRow = document.getElementById('iconRow');
+    const numberToDisplay = selectIconCount();
+    const selectedIcons = pickRandomIcons(numberToDisplay);
+
+    selectedIcons.forEach(icon => {
+      const img = document.createElement('img');
+      img.src = icon.src;
+      img.alt = icon.alt;
+      iconRow.appendChild(img);
+    });
+  </script>
 </body>
 </html>
