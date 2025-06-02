@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Timer Toggle Corrigé</title>
+  <style>
+    body {
+      background: #eee;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #slot-container {
+      width: 90vw;
+      height: 90vw;
+      background: #ccc;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    .timer-wrapper {
+      width: 90vw;
+      height: 90vw;
+      background: black;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      z-index: 10;
+    }
+
+    .timer-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .icon-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      position: absolute;
+      top: 67%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+    }
+
+    .icon-row img {
+      height: 80px;
+      width: 80px;
+      border-radius: 50%;
+      background: white;
+      padding: 6px;
+      box-sizing: border-box;
+      border: 4px solid #d2691e;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: absolute;
+      top: 80%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+    }
+
+    .label {
+      font-size: 1.6em;
+      font-weight: bold;
+      color: #ccc;
+      width: 80px;
+      text-align: center;
+      transition: color 0.3s ease;
+    }
+
+    .label.active-malus {
+      color: #e74c3c;
+    }
+
+    .label.active-bonus {
+      color: #2ecc71;
+    }
+
+    .switch-track {
+      position: relative;
+      width: 260px;
+      height: 54px;
+      background-color: #ccc;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .color-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      z-index: 1;
+      transition: background 0.3s ease;
+      clip-path: polygon(0 0, 0 100%, 0 100%, 0 0);
+    }
+
+    .fill-left.active {
+      background-color: #e74c3c;
+      clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
+    }
+
+    .fill-right.active {
+      background-color: #2ecc71;
+      clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0);
+    }
+
+    .switch-thumb {
+      position: absolute;
+      top: 3px;
+      width: 68px;
+      height: 46px;
+      background: white;
+      border-radius: 16px;
+      border: 3px solid #333;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      transition: left 0.25s ease;
+      z-index: 3;
+    }
+
+    .center-marker {
+      position: absolute;
+      top: 13px;
+      left: 50%;
+      width: 4px;
+      height: 30px;
+      background-color: white;
+      transform: translateX(-50%);
+      z-index: 5;
+    }
+
+    input[type="range"] {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      z-index: 4;
+      cursor: pointer;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="slot-container">
+    <button id="createBtn" onclick="createTimer()" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3em; padding: 1em 2em; background: #ccc; border: 4px solid black; border-radius: 20px;">Créer<br>un<br>Timer</button>
+  </div>
+
+  <script>
+    let timerExists = false;
+    let timerWrapper = null;
+
+    class TimerObject {
+      constructor(container, onDelete) {
+        this.container = container;
+        this.onDelete = onDelete;
+        this.wrapper = document.createElement("div");
+        this.wrapper.className = "timer-wrapper";
+
+        this.canvas = document.createElement("canvas");
+        this.canvas.width = 200;
+        this.canvas.height = 200;
+        this.canvas.className = "timer-canvas";
+        this.ctx = this.canvas.getContext("2d");
+        this.wrapper.appendChild(this.canvas);
+
+        this.text = this.makeDiv("42%", "6em", "bold");
+        this.text.style.left = "50%";
+        this.text.style.transform = "translate(-50%, -50%)";
+        this.wrapper.appendChild(this.text);
+
+        this.bar = document.createElement("div");
+        this.bar.style.position = "absolute";
+        this.bar.style.top = "52%";
+        this.bar.style.width = "70%";
+        this.bar.style.height = "6px";
+        this.bar.style.left = "50%";
+        this.bar.style.transform = "translateX(-50%)";
+        this.wrapper.appendChild(this.bar);
+
+        this.name = this.makeDiv("56%", "4em", "bold");
+        this.name.style.left = "50%";
+        this.name.style.transform = "translateX(-50%)";
+        const x = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        const y = Math.random() < 0.5 ? 'H' : 'F';
+        this.name.textContent = `${x} - ${y}`;
+        this.wrapper.appendChild(this.name);
+
+        this.iconRow = document.createElement("div");
+        this.iconRow.className = "icon-row";
+        this.insertIcons();
+        this.wrapper.appendChild(this.iconRow);
+
+        this.toggleRow = document.createElement("div");
+        this.toggleRow.className = "toggle-row";
+        const suffix = this.name.textContent;
+        this.toggleRow.innerHTML = `
+          <div class="label" id="label-malus-${suffix}">MALUS</div>
+          <div class="switch-track">
+            <div class="color-fill fill-left" id="fillLeft-${suffix}"></div>
+            <div class="color-fill fill-right" id="fillRight-${suffix}"></div>
+            <div class="switch-thumb" id="thumb-${suffix}"></div>
+            <div class="center-marker"></div>
+            <input type="range" min="0" max="2" value="0" step="1" id="rangeInput-${suffix}">
+          </div>
+          <div class="label" id="label-bonus-${suffix}">BONUS</div>`;
+        this.wrapper.appendChild(this.toggleRow);
+
+        setTimeout(() => {
+          const range = document.getElementById(`rangeInput-${suffix}`);
+          const thumb = document.getElementById(`thumb-${suffix}`);
+          const fillLeft = document.getElementById(`fillLeft-${suffix}`);
+          const fillRight = document.getElementById(`fillRight-${suffix}`);
+          const labelMalus = document.getElementById(`label-malus-${suffix}`);
+          const labelBonus = document.getElementById(`label-bonus-${suffix}`);
+
+          const updateSwitch = (value) => {
+            const pos = ['1px', '96px', '188px'];
+            thumb.style.left = pos[value];
+            fillLeft.classList.toggle('active', value == 0);
+            fillRight.classList.toggle('active', value == 2);
+            labelMalus.classList.toggle('active-malus', value == 0);
+            labelBonus.classList.toggle('active-bonus', value == 2);
+            this.speed = value == 0 ? 3 : value == 2 ? 0.5 : 1;
+          };
+
+          range.addEventListener('input', () => updateSwitch(parseInt(range.value)));
+          updateSwitch(parseInt(range.value));
+        }, 0);
+
+        const roll = Math.random();
+        this.maxTime = roll < 0.6 ? 300 : roll < 0.9 ? 600 : 3600;
+        this.time = this.maxTime;
+        this.speed = 3;
+        this.paused = false;
+        this.deceased = false;
+
+        const plusBtn = document.createElement("button");
+        plusBtn.textContent = "+1 min";
+        plusBtn.style.position = "absolute";
+        plusBtn.style.top = "100px";
+        plusBtn.style.left = "50%";
+        plusBtn.style.transform = "translateX(-50%)";
+        plusBtn.style.border = "none";
+        plusBtn.style.background = "black";
+        plusBtn.style.color = "white";
+        plusBtn.style.fontWeight = "bold";
+        plusBtn.style.fontSize = "2.5em";
+        plusBtn.style.padding = "1em 2em";
+        plusBtn.style.cursor = "pointer";
+        plusBtn.onclick = () => {
+          this.time = Math.min(this.time + 60, this.maxTime);
+          this.updateDisplay();
+        };
+        this.wrapper.appendChild(plusBtn);
+
+        this.wrapper.addEventListener("click", (event) => {
+          if (
+            !this.deceased &&
+            !event.target.closest("button") &&
+            !event.target.closest(".toggle-row")
+          ) {
+            this.paused = !this.paused;
+          }
+        });
+
+        container.appendChild(this.wrapper);
+        this.lastTime = performance.now();
+        requestAnimationFrame(this.tick.bind(this));
+      }
+
+      makeDiv(top, fontSize, weight) {
+        const d = document.createElement("div");
+        d.style.position = "absolute";
+        d.style.top = top;
+        d.style.width = "100%";
+        d.style.textAlign = "center";
+        d.style.fontSize = fontSize;
+        d.style.fontWeight = weight;
+        d.style.color = "white";
+        return d;
+      }
+
+      insertIcons() {
+        const icons = [];
+        if (Math.random() < 0.5) icons.push('crane');
+        if (Math.random() < 0.5) icons.push('thorax');
+        if (Math.random() < 0.5) icons.push('abdomen');
+        if (Math.random() < 0.5) icons.push('os');
+        const order = ['crane', 'thorax', 'abdomen', 'os'];
+        order.filter(i => icons.includes(i)).forEach(icon => {
+          const img = document.createElement("img");
+          img.src = `https://raw.githubusercontent.com/GuillaumePORTA/icons/main/${icon}.png`;
+          img.alt = icon;
+          this.iconRow.appendChild(img);
+        });
+      }
+
+      tick(now) {
+        const delta = (now - this.lastTime) / 1000;
+        this.lastTime = now;
+        if (!this.paused && !this.deceased) {
+          this.time -= this.speed * delta;
+          if (this.time <= 0) {
+            this.time = 0;
+            this.deceased = true;
+          }
+        }
+        this.updateDisplay();
+        requestAnimationFrame(this.tick.bind(this));
+      }
+
+      updateDisplay() {
+        const min = String(Math.floor(this.time / 60)).padStart(2, '0');
+        const sec = String(Math.floor(this.time % 60)).padStart(2, '0');
+        this.text.textContent = this.deceased ? "DECEDE" : `${min}:${sec}`;
+        const color = this.deceased ? "purple" : this.paused ? "blue" : this.maxTime === 300 ? "red" : this.maxTime === 600 ? "orange" : "green";
+        this.text.style.color = color;
+        this.bar.style.backgroundColor = color;
+        this.name.style.color = color;
+
+        this.ctx.clearRect(0, 0, 200, 200);
+        const angle = (this.time / this.maxTime) * 2 * Math.PI;
+        this.ctx.beginPath();
+        this.ctx.arc(100, 100, 90, -Math.PI / 2, -Math.PI / 2 + angle);
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = 6;
+        this.ctx.stroke();
+      }
+    }
+
+    function createTimer() {
+      if (timerExists) return;
+      timerExists = true;
+      document.getElementById("createBtn").style.visibility = "hidden";
+      const slot = document.getElementById("slot-container");
+      timerWrapper = new TimerObject(slot, () => {
+        timerExists = false;
+        document.getElementById("createBtn").style.visibility = "visible";
+      });
+    }
+  </script>
+</body>
+</html>
