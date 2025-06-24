@@ -1,0 +1,608 @@
+
+<!DOCTYPE html>
+
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Timer Bloc Opératoire</title>
+<style>
+    body {
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      /*border: 4px solid black; */
+      display: flex;
+      flex-direction: row;
+      background-color: white;
+      border-radius: 20px;
+      width: 800px;
+      height: 500px;
+      position: relative;
+      overflow: hidden;
+    }
+    .left-panel {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 25px;
+    }
+    .value-header {
+      display: flex;
+      justify-content: space-between;
+      width: 120px;
+      margin-left: 60px;
+      margin-bottom: 4px;
+      margin-top: 10px;
+    }
+    .value-header span {
+      display: inline-block;
+      width: 30px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      transform: translate(6px, 6px);
+    }
+    .control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .label {
+      font-weight: bold;
+      width: 60px;
+    }
+    .slider-container {
+      width: 120px;
+      position: relative;
+      background: #ccc;
+      border-radius: 20px;
+      height: 30px;
+    }
+    .slider-container.short {
+      width: 80px;
+    }
+    .slider {
+      width: 100%;
+      appearance: none;
+      background: transparent;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 30px;
+      z-index: 2;
+    }
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      height: 36px;
+      width: 36px;
+      border-radius: 50%;
+      background: #4CAF50;
+      cursor: pointer;
+      border: 3px solid white;
+      margin-top: -3px;
+    }
+    .slider::-moz-range-thumb {
+      height: 36px;
+      width: 36px;
+      border-radius: 50%;
+      background: #4CAF50;
+      cursor: pointer;
+      border: 3px solid white;
+    }
+    .right-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #timerText {
+      font-size: 4em;
+      font-weight: bold;
+      color: black;
+      margin-top: 20px;
+    }
+    .icon-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .icon-btn {
+      width: 50px;
+      height: 50px;
+      background: #bbb;
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .icon-btn.active {
+      background: #4CAF50;
+    }
+    .icon-btn img {
+      width: 28px;
+      height: 28px;
+      pointer-events: none;
+    }
+  
+#scanBtn {
+  background: transparent;
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  border: none;
+}
+
+#scanImg {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+  
+.container-wrapper {
+  --progress: 100%;
+  padding: 6px;
+  border-radius: 24px;
+  background: conic-gradient(#ff4444 var(--progress), transparent 0%);
+  transition: background 0.3s linear;
+  display: inline-block;
+}
+
+  
+    .surg-btn {
+      background: transparent;
+      width: 60px;
+      height: 60px;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+    }
+    .surg-img {
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+</style>
+</head>
+<body>
+<div class="container-wrapper"><div class="container">
+<div class="left-panel">
+<div class="value-header"><span>0</span><span>1</span><span>2</span></div>
+<div class="control"><div class="label">IBO</div><div class="slider-container"><input class="slider" id="iboRange" max="2" min="0" type="range" value="0"/></div></div>
+<div class="control"><div class="label">IADE</div><div class="slider-container short"><input class="slider" id="iadeRange" max="1" min="0" type="range" value="0"/></div></div>
+<div class="control"><div class="label">Patient</div><div class="slider-container short"><input class="slider" id="patRange" max="1" min="0" type="range" value="0"/></div></div>
+<div class="icon-row" style="margin-top:auto;">
+<button class="surg-btn" data-type="crane">
+<img alt="Crâne" class="surg-img" src="https://raw.githubusercontent.com/GuillaumePORTA/icons/main/chir_crane_inactive_400.png"/>
+</button>
+<button class="surg-btn" data-type="thorax">
+<img alt="Thorax" class="surg-img" src="https://raw.githubusercontent.com/GuillaumePORTA/icons/main/chir_thorax_inactive_400.png"/>
+</button>
+<button class="surg-btn" data-type="abdo">
+<img alt="Abdomen" class="surg-img" src="https://raw.githubusercontent.com/GuillaumePORTA/icons/main/chir_abdo_inactive_400.png"/>
+</button>
+<button class="surg-btn" data-type="ortho">
+<img alt="Ortho" class="surg-img" src="https://raw.githubusercontent.com/GuillaumePORTA/icons/main/chir_ortho_inactive_400.png"/>
+</button>
+</div>
+</div>
+<div class="right-panel">
+<div class="icon-row">
+<div class="icon-btn" id="scanBtn">
+<img alt="Scan" id="scanImg" src="https://raw.githubusercontent.com/GuillaumePORTA/icons/main/scan_inactive_240.png"/>
+</div>
+</div>
+<!-- BOUTONS HOMME / FEMME -->
+<div class="icon-row">
+<div class="icon-btn gender-btn" id="btnHomme"><img alt="homme" src="https://cdn-icons-png.flaticon.com/512/3439/3439472.png"/></div>
+<div class="icon-btn gender-btn" id="btnFemme"><img alt="femme" src="https://cdn-icons-png.flaticon.com/512/103/103277.png"/></div>
+</div>
+<!-- BOUTONS ORGANES -->
+<div class="icon-row">
+<div class="icon-btn org-btn"><img alt="crâne" src="https://cdn-icons-png.flaticon.com/512/3458/3458771.png"/></div>
+<div class="icon-btn org-btn"><img alt="thorax" src="https://cdn-icons-png.flaticon.com/512/6800/6800956.png"/></div>
+<div class="icon-btn org-btn"><img alt="foie" src="https://cdn-icons-png.flaticon.com/512/2001/2001818.png"/></div>
+<div class="icon-btn org-btn"><img alt="os" src="https://cdn-icons-png.flaticon.com/512/2928/2928078.png"/></div>
+</div>
+<div id="timerText">--:--</div>
+<div id="segmentList" style="margin-top: 10px; font-size: 0.9em; text-align: center;">
+<strong>Segments restants :</strong>
+<div id="segmentItems"></div>
+</div><div id="segmentList" style="margin-top: 10px; font-size: 0.9em; text-align: center;"></div>
+</div>
+</div>
+<script>
+let baseTime = 0;
+let currentTime = 0;
+let timerInterval = null;
+let previousOrgans = 0;
+let scanActive = false;
+
+const lesionChirPairs = [
+  { lesionIdx: 0, chirType: "crane" },   // a
+  { lesionIdx: 1, chirType: "thorax" },  // b
+  { lesionIdx: 2, chirType: "abdo" },    // c
+  { lesionIdx: 3, chirType: "ortho" }    // d
+];
+
+let scanSpeed = 1;
+let initialTime = 0;
+const state = { ibo: 0, chir: 0, iade: 0, pat: 0 };
+
+document.querySelectorAll(".slider").forEach(slider => {
+  slider.addEventListener("input", () => {
+    const id = slider.id.replace("Range", "");
+    state[id] = parseInt(slider.value);
+    evaluate();
+  });
+});
+
+
+
+
+document.getElementById("scanBtn").addEventListener("click", () => {
+  scanActive = !scanActive;
+  scanSpeed = scanActive ? 1.5 : 1;
+  document.getElementById("scanImg").src = scanActive
+    ? "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/scan_active_240.png"
+    : "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/scan_inactive_240.png";
+  evaluate();
+});
+
+
+document.querySelectorAll(".gender-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const wasActive = btn.classList.contains("active");
+    document.querySelectorAll(".gender-btn").forEach(b => b.classList.remove("active"));
+    if (!wasActive) btn.classList.add("active");
+    evaluate();
+  });
+});
+
+function updateTimerFromOrgans() {
+  const active = document.querySelectorAll(".org-btn.active").length;
+  const timer = document.getElementById("timerText");
+  
+  const newTime = active * 4 * 60;
+  const delta = newTime - previousOrgans * 4 * 60;
+  currentTime += delta;
+
+  if (currentTime < 0) {
+	console.warn("Temps devenu négatif, remis à zéro.");
+	currentTime = 0;
+  }
+  
+  if (active=== 0 && currentTime === 0) {
+	timer.textContent = "--:--";
+        timer.style.color = "black";
+	stopTimer();
+	} else if (currentTime === 0 && active > 0) {
+		timer.textContent = "BLOC TERMINÉ";
+		timer.style.color = "brown";
+    		timer.style.fontSize = "2.5em";
+		stopTimer();
+		document.querySelectorAll(".org-btn").forEach(b => b.style.pointerEvents = "none");
+	} else {
+		timer.textContent = formatTime(currentTime);
+		timer.style.color = "black";
+	}
+
+  previousOrgans = active;
+  initialTime = active * 4 * 60;
+  evaluate();
+  }
+
+
+function formatTime(t) {
+  const m = Math.floor(t / 60).toString().padStart(2, '0');
+  const s = Math.floor(t % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function evaluate() {
+  const timer = document.getElementById("timerText");
+  const genderOK = document.querySelector(".gender-btn.active");
+  const organOK = document.querySelectorAll(".org-btn.active").length > 0;
+  const ready = state.ibo > 0 && state.chir > 0 && state.iade > 0 && state.pat > 0;
+
+  if (!genderOK || !organOK) {
+    stopTimer();
+    if (currentTime === 0) {
+      timer.textContent = "--:--";
+      timer.style.color = "black";
+    } else if (currentTime > 0) {
+      stopTimer();
+      timer.style.color = "blue";
+    }
+    return;
+  }
+
+  if (!ready || currentTime === 0) {
+    stopTimer();
+    if (currentTime > 0) {
+      timer.style.color = "blue";
+    }
+    return;
+  }
+
+let speedMultiplier = 1.0;
+if (state.ibo === 2) speedMultiplier *= 1.5;
+if (scanActive) speedMultiplier *= 1.5;
+if (speedMultiplier > 2.0) speedMultiplier = 2.0;
+
+  startTimer(speedMultiplier);
+  timer.style.fontSize = "4em";
+}
+
+
+function computeLesionSegments() {
+  const lesions = document.querySelectorAll(".org-btn");
+  const surgeons = document.querySelectorAll(".surg-btn");
+
+  let segments = []; // Liste de {time: xxx, speed: yyy}
+
+  lesionChirPairs.forEach(pair => {
+    const lesion = lesions[pair.lesionIdx];
+    const lesionActive = lesion.classList.contains("active");
+
+    if (!lesionActive) return;
+
+    const surgeon = Array.from(surgeons).find(b => b.dataset.type === pair.chirType);
+    const surgeonActive = surgeon?.classList.contains("active");
+
+    if (surgeonActive) {
+      segments.push({ time: 4 * 60, speed: 1, label: pair.chirType });
+    } else {
+      const otherActive = Array.from(surgeons).some(b =>
+        b.classList.contains("active") && b.dataset.type !== pair.chirType
+      );
+      if (otherActive) {
+        segments.push({ time: 4 * 60, speed: 0.3, label: pair.chirType });
+      }
+    }
+  });
+
+  // Tri : d'abord les segments à vitesse x1, ensuite ceux à x0.3
+  segments.sort((a, b) => b.speed - a.speed);
+
+  return segments;
+}
+
+
+
+function startTimer(baseSpeedMultiplier) {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    updateSegmentSpeeds();
+
+    // Réordonner les segments selon leur vitesse
+    activeSegments.sort((a, b) => b.speed - a.speed);
+
+    // Si le segment en cours est inactif, en choisir un autre
+    const current = activeSegments[currentSegmentIndex];
+    const isCurrentValid = current && current.speed > 0;
+
+    if (!isCurrentValid) {
+      const nextIdx = activeSegments.findIndex(s => s.speed > 0);
+      if (nextIdx !== -1) {
+        currentSegmentIndex = nextIdx;
+        segmentTimeLeft = activeSegments[currentSegmentIndex].timeLeft;
+      }
+    }
+
+    if (currentSegmentIndex >= activeSegments.length) {
+      currentTime = 0;
+      document.getElementById("timerText").textContent = "BLOC TERMINÉ";
+      document.getElementById("timerText").style.color = "brown";
+      document.getElementById("timerText").style.fontSize = "2.5em";
+      stopTimer();
+      return;
+    }
+
+    const seg = activeSegments[currentSegmentIndex];
+    const effectiveSpeed = seg.speed * baseSpeedMultiplier;
+
+    segmentTimeLeft -= effectiveSpeed;
+    seg.timeLeft -= effectiveSpeed;
+    currentTime -= effectiveSpeed;
+
+    if (segmentTimeLeft <= 0) {
+      currentSegmentIndex++;
+      segmentTimeLeft = activeSegments[currentSegmentIndex]?.timeLeft || 0;
+    }
+
+    updateSegmentDisplay();
+
+    const timer = document.getElementById("timerText");
+    if (currentTime <= 0 || isNaN(currentTime)) {
+      timer.textContent = "BLOC TERMINÉ";
+      timer.style.color = "brown";
+      timer.style.fontSize = "2.5em";
+      stopTimer();
+    } else {
+      timer.textContent = formatTime(currentTime);
+      timer.style.color = "brown";
+      const percent = Math.max(100 * (currentTime / initialTime), 0);
+      document.querySelector(".container-wrapper").style.setProperty("--progress", percent + "%");
+    }
+  }, 1000);
+}
+
+
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+}
+
+document.querySelectorAll(".surg-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const type = btn.getAttribute("data-type");
+    const img = btn.querySelector("img");
+    const isActive = btn.classList.toggle("active");
+    img.src = isActive
+      ? `https://raw.githubusercontent.com/GuillaumePORTA/icons/main/chir_${type}_active_400.png`
+      : `https://raw.githubusercontent.com/GuillaumePORTA/icons/main/chir_${type}_inactive_400.png`;
+      state.chir = document.querySelectorAll(".surg-btn.active").length;
+      updateSegmentSpeeds();
+      updateSegmentDisplay();
+      evaluate();
+  });
+});
+
+
+let activeSegments = []; // {label: "crane", timeLeft: 240, speed: 1}
+let currentSegmentIndex = 0;
+let segmentTimeLeft = 0;
+
+function updateSegmentDisplay() {
+  const iconMap = {
+    crane: "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/crane.png",
+    thorax: "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/thorax.png",
+    abdo: "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/abdomen.png",
+    ortho: "https://raw.githubusercontent.com/GuillaumePORTA/icons/main/os.png"
+  };
+  const segmentItems = document.getElementById("segmentItems");
+  segmentItems.innerHTML = "";
+  activeSegments.slice(currentSegmentIndex).forEach((seg, idx) => {
+    const icon = iconMap[seg.label] || "";
+    let t = idx === 0 ? segmentTimeLeft : seg.timeLeft;
+    const m = Math.floor(t / 60).toString().padStart(2, '0');
+    const s = Math.floor(t % 60).toString().padStart(2, '0');
+    const displayedSpeed = seg.speed > 0 ? seg.speed : 0;
+    const el = document.createElement("div");
+    el.innerHTML = `<img src="${icon}" alt="${seg.label}" style="width:20px;vertical-align:middle;margin-right:6px;"> ${m}:${s} (x${displayedSpeed})`;
+    segmentItems.appendChild(el);
+  });
+}
+
+function computeActiveSegments() {
+  const lesions = document.querySelectorAll(".org-btn");
+  const surgeons = document.querySelectorAll(".surg-btn");
+
+  let updated = [];
+
+  lesionChirPairs.forEach(pair => {
+    const lesion = lesions[pair.lesionIdx];
+    if (!lesion.classList.contains("active")) return;
+
+    const label = pair.chirType;
+
+    // Conserver le timeLeft existant si présent
+    const existing = activeSegments.find(s => s.label === label);
+    const timeLeft = existing ? existing.timeLeft : 240;
+
+    const correspondingSurgeon = Array.from(surgeons).find(b => b.dataset.type === label);
+    const isOwnSurgeonActive = correspondingSurgeon?.classList.contains("active");
+    const otherActive = Array.from(surgeons).some(b => b.classList.contains("active") && b.dataset.type !== label);
+
+    let speed = 0;
+    if (isOwnSurgeonActive) speed = 1;
+    else if (otherActive) speed = 0.3;
+
+    updated.push({ label, timeLeft, speed });
+  });
+
+  updated.sort((a, b) => b.speed - a.speed);
+  return updated;
+}
+
+document.querySelectorAll(".org-btn").forEach((btn, idx) => {
+  btn.addEventListener("click", () => {
+    btn.classList.toggle("active");
+    const updated = computeActiveSegments();
+    activeSegments = updated;
+    currentSegmentIndex = 0;
+    segmentTimeLeft = updated[0]?.timeLeft || 0;
+    updateTimerFromOrgans();
+    updateSegmentDisplay();
+  });
+});
+
+function updateSegmentSpeeds() {
+  const surgeons = document.querySelectorAll(".surg-btn");
+  activeSegments.forEach((seg, idx) => {
+    const btn = Array.from(surgeons).find(b => b.dataset.type === seg.label);
+    const isOwnSurgeonActive = btn?.classList.contains("active");
+    const otherActive = Array.from(surgeons).some(b => b.classList.contains("active") && b.dataset.type !== seg.label);
+    if (isOwnSurgeonActive) seg.speed = 1;
+    else if (otherActive) seg.speed = 0.3;
+    else seg.speed = 0;
+  });
+}
+
+
+function startTimer(baseSpeedMultiplier) {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    updateSegmentSpeeds();
+
+    // Réordonner les segments selon leur vitesse
+    activeSegments.sort((a, b) => b.speed - a.speed);
+
+    // Si le segment en cours est inactif, en choisir un autre
+    const current = activeSegments[currentSegmentIndex];
+    const isCurrentValid = current && current.speed > 0;
+
+    if (!isCurrentValid) {
+      const nextIdx = activeSegments.findIndex(s => s.speed > 0);
+      if (nextIdx !== -1) {
+        currentSegmentIndex = nextIdx;
+        segmentTimeLeft = activeSegments[currentSegmentIndex].timeLeft;
+      }
+    }
+
+    if (currentSegmentIndex >= activeSegments.length) {
+      currentTime = 0;
+      document.getElementById("timerText").textContent = "BLOC TERMINÉ";
+      document.getElementById("timerText").style.color = "brown";
+      document.getElementById("timerText").style.fontSize = "2.5em";
+      stopTimer();
+      return;
+    }
+
+    const seg = activeSegments[currentSegmentIndex];
+    const effectiveSpeed = seg.speed * baseSpeedMultiplier;
+
+    segmentTimeLeft -= effectiveSpeed;
+    seg.timeLeft -= effectiveSpeed;
+    currentTime -= effectiveSpeed;
+
+    if (segmentTimeLeft <= 0) {
+      currentSegmentIndex++;
+      segmentTimeLeft = activeSegments[currentSegmentIndex]?.timeLeft || 0;
+    }
+
+    updateSegmentDisplay();
+
+    const timer = document.getElementById("timerText");
+    if (currentTime <= 0 || isNaN(currentTime)) {
+      timer.textContent = "BLOC TERMINÉ";
+      timer.style.color = "brown";
+      timer.style.fontSize = "2.5em";
+      stopTimer();
+    } else {
+      timer.textContent = formatTime(currentTime);
+      timer.style.color = "brown";
+      const percent = Math.max(100 * (currentTime / initialTime), 0);
+      document.querySelector(".container-wrapper").style.setProperty("--progress", percent + "%");
+    }
+  }, 1000);
+}
+
+
+</script>
+</div></body>
+</html>
